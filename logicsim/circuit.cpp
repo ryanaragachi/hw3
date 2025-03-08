@@ -11,9 +11,8 @@
 #include "circuit.h"
 #include "event.h"
 
-Circuit::Circuit() : m_current_time(0)
+Circuit::Circuit() : m_pq(), m_current_time(0)
 {
-    
 }
 
 Circuit::~Circuit()
@@ -31,24 +30,23 @@ Circuit::~Circuit()
 void Circuit::test()
 {
     m_wires.push_back(new Wire(0, "input A"));
-	m_wires.push_back(new Wire(1, "input B"));
-	m_wires.push_back(new Wire(2, "output"));
+    m_wires.push_back(new Wire(1, "input B"));
+    m_wires.push_back(new Wire(2, "output"));
     
     Gate* g = new And2Gate(m_wires[0], m_wires[1], m_wires[2]);
-	m_gates.push_back(g);
+    m_gates.push_back(g);
     
-	Event* e = new Event {0,m_wires[0],'0'};
-	m_pq.push(e);
+    Event* e = new Event {0, m_wires[0], '0'};
+    m_pq.push(e);
 	
-	e = new Event {0,m_wires[1],'1'};
-	m_pq.push(e);
+    e = new Event {0, m_wires[1], '1'};
+    m_pq.push(e);
 	
-	e = new Event {4,m_wires[0],'1'};
-	m_pq.push(e);
+    e = new Event {4, m_wires[0], '1'};
+    m_pq.push(e);
 
-  e = new Event {6,m_wires[1],'0'};
-	m_pq.push(e);
-	
+    e = new Event {6, m_wires[1], '0'};
+    m_pq.push(e);
 }
 
 bool Circuit::parse(const char* fname)
@@ -60,85 +58,92 @@ bool Circuit::parse(const char* fname)
     }
     
     std::string line;
-    while( getline(inFile, line))
+    while(getline(inFile, line))
     {
         if(line == "WIRES")
         {
             std::string t_line;
-            getline(inFile,t_line);
+            getline(inFile, t_line);
             int n = stoi(t_line);
-            for(int i = 0;i<n;i++)
+            for(int i = 0; i < n; i++)
             {
-                getline(inFile,t_line);
+                getline(inFile, t_line);
                 std::stringstream ss(t_line);
-                std::string s_id;
+                std::string s_id, s_name;
                 getline(ss, s_id, ',');
-                std::string s_name;
-                getline(ss, s_name, ',');
+                getline(ss, s_name);
                 m_wires.push_back(new Wire(stoi(s_id), s_name));
             }
         }
-        if(line == "GATES")
+        else if(line == "GATES")
         {
             std::string t_line;
-            getline(inFile,t_line);
+            getline(inFile, t_line);
             int n = stoi(t_line);
-            for(int i = 0;i<n;i++)
+            for(int i = 0; i < n; i++)
             {
-                getline(inFile,t_line);
+                getline(inFile, t_line);
                 std::stringstream ss(t_line);
                 std::string s_type;
                 getline(ss, s_type, ',');
+                
                 if(s_type == "AND2")
                 {
-                    std::string s_in1;
+                    std::string s_in1, s_in2, s_output;
                     getline(ss, s_in1, ',');
-                    std::string s_in2;
                     getline(ss, s_in2, ',');
-                    std::string s_output;
-                    getline(ss, s_output, ',');
+                    getline(ss, s_output);
                     m_gates.push_back(new And2Gate(m_wires[stoi(s_in1)], m_wires[stoi(s_in2)], m_wires[stoi(s_output)]));
                 }
-                if(s_type == "OR2")
+                else if(s_type == "OR2")
                 {
-                    std::string s_in1;
+                    std::string s_in1, s_in2, s_output;
                     getline(ss, s_in1, ',');
-                    std::string s_in2;
                     getline(ss, s_in2, ',');
-                    std::string s_output;
-                    getline(ss, s_output, ',');
+                    getline(ss, s_output);
                     m_gates.push_back(new Or2Gate(m_wires[stoi(s_in1)], m_wires[stoi(s_in2)], m_wires[stoi(s_output)]));
                 }
-                //Add code here to support the NOT gate type
+                else if(s_type == "NOT")
+                {
+                    std::string s_input, s_output;
+                    getline(ss, s_input, ',');
+                    getline(ss, s_output);
+                    m_gates.push_back(new NotGate(m_wires[stoi(s_input)], m_wires[stoi(s_output)]));
+                }
             }
         }
-        if(line == "INJECT")
+        else if(line == "INJECT")
         {
             std::string t_line;
-            getline(inFile,t_line);
+            getline(inFile, t_line);
             int n = stoi(t_line);
-            for(int i = 0;i<n;i++)
+            for(int i = 0; i < n; i++)
             {
-                getline(inFile,t_line);
+                getline(inFile, t_line);
                 std::stringstream ss(t_line);
-                std::string s_time;
+                std::string s_time, s_wire, s_state;
                 getline(ss, s_time, ',');
-                std::string s_wire;
                 getline(ss, s_wire, ',');
-                std::string s_state;
-                getline(ss, s_state, ',');
-            	Event* e = new Event {static_cast<uint64_t>(stoi(s_time)),m_wires[stoi(s_wire)],s_state[0]};
-                //std::cout << s_time << "," << s_wire << "," << s_state << std::endl;
-            	m_pq.push(e);
+                getline(ss, s_state);
+                Event* e = new Event {static_cast<uint64_t>(stoi(s_time)), m_wires[stoi(s_wire)], s_state[0]};
+                m_pq.push(e);
             }
         }
     }
     return true;
 }
 
+void Circuit::run(std::ostream& os)
+{
+   
+    while(advance(os)){
+        
+	}
+}
+
 bool Circuit::advance(std::ostream& os)
 {
-	if(m_pq.size() == 0)
+    if(m_pq.size() == 0)
 	{
 		return false;
 	}
@@ -183,17 +188,9 @@ bool Circuit::advance(std::ostream& os)
 	return true;
 }
 
-void Circuit::run(std::ostream& os)
-{
-	
-	while(advance(os)){
-        
-	}
-}
-
 void Circuit::startUml(std::ostream& os)
 {
-	os << "@startuml" << std::endl;
+    os << "@startuml" << std::endl;
     for(auto w : m_wires)
     {
         if(w->getName().size() > 0)
@@ -211,7 +208,6 @@ void Circuit::startUml(std::ostream& os)
 				}
 		}
     os << std::endl;
-    
 }
 
 void Circuit::endUml(std::ostream& os)
